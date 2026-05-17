@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>KAZxRAT v4</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: radial-gradient(ellipse at 30% 20%, #0a0000, #000000);
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* LOGIN */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 20%, #1a0000, #000000);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-card {
+            background: rgba(10, 0, 0, 0.85);
+            backdrop-filter: blur(15px);
+            border: 2px solid #ff0000;
+            border-radius: 30px;
+            padding: 45px 35px;
+            width: 380px;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.5);
+        }
+        .login-card h1 {
+            color: #ff0000;
+            font-size: 38px;
+            letter-spacing: 4px;
+            margin-bottom: 25px;
+        }
+        .login-card input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #1a0000;
+            border: 1px solid #ff0000;
+            border-radius: 50px;
+            color: #ff8888;
+        }
+        .login-card button {
+            width: 100%;
+            background: linear-gradient(45deg, #ff0000, #cc0000);
+            border: none;
+            padding: 12px;
+            border-radius: 50px;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .register-link {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #ff8888;
+        }
+        .register-link a {
+            color: #ff0000;
+            text-decoration: none;
+        }
+
+        /* DASHBOARD */
+        .dashboard {
+            display: none;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: rgba(10, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 2px solid #ff0000;
+            border-radius: 20px 20px 0 0;
+            margin-bottom: 20px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: #ff0000;
+        }
+        .menu-icon {
+            font-size: 28px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #ff0000;
+        }
+        .user-info {
+            background: #1a0000;
+            padding: 6px 18px;
+            border-radius: 50px;
+            border: 1px solid red;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .music-control {
+            display: flex;
+            gap: 5px;
+            background: #1a0000;
+            padding: 4px 12px;
+            border-radius: 50px;
+            border: 1px solid red;
+        }
+        .music-control button {
+            background: #ff0000;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100%;
+            background: rgba(10, 0, 0, 0.98);
+            backdrop-filter: blur(15px);
+            border-right: 2px solid #ff0000;
+            z-index: 1001;
+            transition: 0.3s;
+            padding: 25px;
+        }
+        .sidebar.open { left: 0; }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid red;
+        }
+        .close-sidebar {
+            font-size: 26px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #ff0000;
+        }
+        .sidebar-item {
+            background: #1a0000;
+            border: 1px solid red;
+            border-radius: 15px;
+            padding: 12px;
+            margin: 12px 0;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .sidebar-item:hover {
+            background: red;
+            color: #000;
+            transform: translateX(5px);
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            background: rgba(10, 0, 0, 0.6);
+            border-radius: 50px;
+            cursor: pointer;
+            color: #ff8888;
+        }
+        .tab.active {
+            background: red;
+            color: #000;
+            box-shadow: 0 0 15px red;
+        }
+        .tab-content {
+            display: none;
+            animation: fade 0.3s;
+        }
+        .tab-content.active { display: block; }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+        /* CARDS */
+        .card {
+            background: rgba(15, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 0, 0, 0.4);
+            border-radius: 25px;
+            padding: 22px;
+            margin-bottom: 22px;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff0000;
+            margin-bottom: 15px;
+            border-left: 4px solid #ff0000;
+            padding-left: 12px;
+        }
+
+        .device-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .device-item {
+            background: rgba(26, 0, 0, 0.8);
+            border: 1px solid #ff0000;
+            border-radius: 15px;
+            padding: 12px;
+            margin: 8px 0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .device-item:hover { background: rgba(255, 0, 0, 0.2); }
+        .delete-target {
+            background: #330000;
+            border: 1px solid red;
+            border-radius: 50px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .delete-target:hover { background: red; color: #000; }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #330000;
+        }
+        .map-container { height: 250px; border-radius: 15px; overflow: hidden; margin: 15px 0; }
+
+        .control-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .btn-control {
+            background: #1a0000;
+            border: 2px solid #ff0000;
+            border-radius: 50px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-control:hover { background: #ff0000; color: #000; }
+
+        /* DURASI GETAR */
+        .duration-control {
+            margin-top: 15px;
+            padding: 15px;
+            background: #1a0000;
+            border-radius: 15px;
+            border: 1px solid #ff0000;
+        }
+        .duration-control label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ff8888;
+        }
+        .duration-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .duration-input input {
+            flex: 1;
+            padding: 10px;
+            background: #0a0000;
+            border: 1px solid #ff0000;
+            border-radius: 50px;
+            color: #fff;
+        }
+        .duration-input select {
+            padding: 10px;
+            background: #0a0000;
+            border: 1px solid #ff0000;
+            border-radius: 50px;
+            color: #fff;
+        }
+
+        /* CHAT SECTION */
+        .chat-section {
+            background: #1a0000;
+            border-radius: 15px;
+            padding: 15px;
+        }
+        .chat-messages {
+            height: 250px;
+            overflow-y: auto;
+            background: #0a0000;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .chat-message {
+            padding: 5px;
+            border-bottom: 1px solid #330000;
+            font-size: 12px;
+        }
+        .chat-message .user { color: #ff0000; font-weight: bold; }
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            background: #0a0000;
+            border: 1px solid #ff0000;
+            border-radius: 50px;
+            color: #fff;
+        }
+        .chat-input button {
+            background: #ff0000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+
+        /* AKSES TABLE */
+        .akses-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .akses-table th, .akses-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #330000;
+        }
+        .akses-table th {
+            color: #ff0000;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 11px;
+        }
+        .role-dev { background: #ff0000; color: #000; }
+        .role-owner { background: #ff6600; color: #000; }
+        .role-vip { background: #ffaa00; color: #000; }
+        .role-reseller { background: #00ff66; color: #000; }
+        .role-member { background: #666; color: #fff; }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: rgba(10, 0, 0, 0.7);
+            border: 1px solid red;
+            border-radius: 15px;
+            padding: 12px;
+            flex: 1;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff0000;
+        }
+
+        .profile-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #1a0000;
+            border: 2px solid red;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #0a0000;
+            border: 2px solid red;
+            border-radius: 30px;
+            padding: 30px;
+            width: 380px;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: #1a0000;
+            border: 1px solid red;
+            border-radius: 50px;
+            color: #fff;
+        }
+        .modal-content button {
+            background: linear-gradient(45deg, #ff0000, #cc0000);
+            border: none;
+            padding: 12px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginContainer" class="login-container">
+    <div class="login-card">
+        <h1>KAZxRAT v4</h1>
+        <input type="email" id="loginEmail" placeholder="Email">
+        <input type="password" id="loginPassword" placeholder="Password">
+        <button id="loginBtn">🔥 MASUK 🔥</button>
+        <div class="register-link">Belum punya akun? <a href="https://wa.me/628594279722" target="_blank">Chat 628594279722</a></div>
+    </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="dashboard">
+    <div class="header">
+        <button class="menu-icon" id="menuBtn">☰</button>
+        <div class="logo">KAZxRAT v4</div>
+        <div class="user-info">
+            <span id="userEmail"></span>
+            <div class="music-control">
+                <button id="playMusicBtn">▶</button>
+                <button id="pauseMusicBtn">⏸</button>
+                <span>🎵</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header"><span>⚡ MENU</span><button class="close-sidebar" id="closeSidebar">✖</button></div>
+        <div class="sidebar-item" id="buatAksesBtn">🔐 BUAT AKSES</div>
+        <div class="sidebar-item" id="lihatAksesBtn">📋 LIHAT AKSES</div>
+        <div class="sidebar-item" id="logoutBtn">🚪 LOGOUT</div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card"><div class="stat-value" id="totalTargets">0</div><div>Target</div></div>
+        <div class="stat-card"><div class="stat-value" id="onlineTargets">0</div><div>Online</div></div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" data-tab="kontrol">🎮 KONTROL</div>
+        <div class="tab" data-tab="chat">💬 CHAT</div>
+        <div class="tab" data-tab="profil">👤 PROFIL</div>
+    </div>
+
+    <!-- TAB KONTROL -->
+    <div id="tabKontrol" class="tab-content active">
+        <div class="card">
+            <div class="card-title">📱 TARGET TERSADAP</div>
+            <div class="device-list" id="deviceList"></div>
+        </div>
+        <div id="targetDetailPanel" style="display:none;">
+            <div class="card">
+                <div class="card-title" id="detailTitle">🎯 DETAIL TARGET</div>
+                <div id="detailData"></div>
+                <div id="detailMap" class="map-container"></div>
+                <div class="control-group">
+                    <button class="btn-control" id="torchOnBtn">🔦 SENTER ON</button>
+                    <button class="btn-control" id="torchOffBtn">🔦 SENTER OFF</button>
+                </div>
+                
+                <!-- DURASI GETAR -->
+                <div class="duration-control">
+                    <label>📳 GETAR HP TARGET (durasi)</label>
+                    <div class="duration-input">
+                        <input type="number" id="vibrateDuration" value="5" min="1" max="36000" step="1">
+                        <select id="vibrateUnit">
+                            <option value="detik">Detik</option>
+                            <option value="menit">Menit</option>
+                            <option value="jam">Jam</option>
+                        </select>
+                        <button class="btn-control" id="vibrateBtn">📳 GETAR</button>
+                    </div>
+                    <div id="vibrateStatus" style="font-size:11px; color:#ff8888; margin-top:5px;"></div>
+                </div>
+                <div id="controlMsg" style="margin-top:10px; font-size:12px; color:#ff8888;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB CHAT -->
+    <div id="tabChat" class="tab-content">
+        <div class="card">
+            <div class="card-title">💬 CHAT DENGAN PENGGUNA LAIN</div>
+            <div class="chat-section">
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input">
+                    <input type="text" id="chatInput" placeholder="Ketik pesan...">
+                    <button id="sendChatBtn">📨 KIRIM</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB PROFIL -->
+    <div id="tabProfil" class="tab-content">
+        <div class="card">
+            <div class="profile-img" id="profilePic">📷</div>
+            <input type="file" id="uploadProfile" style="display:none;">
+            <button id="changePhotoBtn" style="background:#1a0000; border:1px solid red; border-radius:50px; padding:8px 20px; margin:0 auto 20px; display:block;">📷 GANTI FOTO</button>
+            <div class="info-row"><span>📧 Email</span><span id="profileEmail">-</span></div>
+            <div class="info-row"><span>👑 Role</span><span id="profileRole">MEMBER</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL BUAT AKSES -->
+<div id="aksesModal" class="modal">
+    <div class="modal-content">
+        <h3 style="color:red;">🔐 BUAT AKSES</h3>
+        <input type="email" id="newEmail" placeholder="Email">
+        <input type="password" id="newPass" placeholder="Password">
+        <select id="newRole">
+            <option>Owner</option>
+            <option>VIP</option>
+            <option>Reseller</option>
+            <option>Member</option>
+        </select>
+        <select id="newDurasi">
+            <option>2 HARI</option><option>1 BULAN</option><option>6 BULAN</option><option>PERMANEN</option>
+        </select>
+        <button id="confirmAkses">✅ BUAT</button>
+        <button id="closeModal">✖ BATAL</button>
+    </div>
+</div>
+
+<!-- MODAL LIHAT AKSES -->
+<div id="lihatAksesModal" class="modal">
+    <div class="modal-content">
+        <h3 style="color:red;">📋 DAFTAR AKSES</h3>
+        <div id="aksesList" style="max-height: 300px; overflow-y: auto; margin: 15px 0;"></div>
+        <button id="closeLihatModal">✖ TUTUP</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        let currentUser = null;
+        let victims = [];
+        let selectedVictim = null;
+        let torchInterval = null;
+        let torchTrack = null;
+        let vibrateInterval = null;
+        let vibrateActive = false;
+        let chatMessages = JSON.parse(localStorage.getItem('kazx_chat') || '[]');
+        let usersList = JSON.parse(localStorage.getItem('kazx_users_list') || '[]');
+        let bgMusic = null;
+
+        // Auto-login check
+        const savedUser = localStorage.getItem('kazx_current_user');
+        if(savedUser) {
+            currentUser = JSON.parse(savedUser);
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('userEmail').innerHTML = currentUser.email;
+            document.getElementById('profileEmail').innerHTML = currentUser.email;
+            if(currentUser.role) document.getElementById('profileRole').innerHTML = currentUser.role;
+            loadUserData();
+            initMusic();
+        }
+
+        function initMusic() {
+            bgMusic = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3');
+            bgMusic.loop = true;
+            document.getElementById('playMusicBtn').onclick = () => bgMusic.play();
+            document.getElementById('pauseMusicBtn').onclick = () => bgMusic.pause();
+        }
+
+        function saveUserData() {
+            let users = JSON.parse(localStorage.getItem('kazx_users_data') || '{}');
